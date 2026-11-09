@@ -3,10 +3,7 @@
 Northstar is a demo inventory operations app backed by a Python API and SQLite database. Use the dashboard to work with stock levels and movement history, and explore ways to make inventory changes reliable through automation, testing, and CI.
 
 ## Project tour
-
-[![Watch the Northstar inventory dashboard walkthrough](assets/project-ui-preview.png)](assets/project-ui.mov)
-
-Select the preview to open the 27-second app walkthrough. It shows the inventory dashboard, stock states, pagination, and recent stock movements.
+https://github.com/user-attachments/assets/4d811a10-10ea-4944-abaf-da51a1ebc7c6
 
 ### Playwright test run
 
