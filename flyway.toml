@@ -1,0 +1,6 @@
+[flyway]
+environment = "local"
+locations = ["filesystem:database/migrations"]
+
+[environments.local]
+url = "jdbc:sqlite:./data/inventory.db"

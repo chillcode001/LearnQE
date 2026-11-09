@@ -1,0 +1,1 @@
+{"root":["./src/main.tsx","./src/api/inventory.ts","./src/components/inventorydashboard.tsx","./src/data/lessons.ts","./src/types/lesson.ts","./src/types/product.ts"],"version":"5.9.3"}
