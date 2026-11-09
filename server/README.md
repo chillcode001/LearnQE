@@ -33,7 +33,13 @@ python -m pip install -r requirements-dev.txt
 python -m pytest tests/unit
 ```
 
-The first learner exercise is in `server/tests/unit/README.md`. Unit tests should construct Pydantic models directly and avoid starting FastAPI or touching SQLite. `httpx2` is included so later API tests can use FastAPI's `TestClient` with the installed Starlette version.
+The first learner exercise is in `server/tests/unit/README.md`. Unit tests construct Pydantic models directly and avoid starting FastAPI or touching SQLite. API integration tests are under `server/tests/integration/`; they start a temporary local API process against a copy of the migrated SQLite database and use the standard library HTTP client.
+
+Run the integration tests after applying migrations from the repository root:
+
+```bash
+python -m pytest tests/integration
+```
 
 ## Endpoints
 
@@ -49,6 +55,8 @@ The first learner exercise is in `server/tests/unit/README.md`. Unit tests shoul
 Purchase uses a SQLite write transaction and a conditional `UPDATE ... WHERE quantity >= requested_quantity`. This protects the last unit from being sold twice. For the user's concurrency exercise, create a one-unit SKU, send two purchase requests at once, then check that only one request succeeds and the stored quantity is zero.
 
 The React app and API are separate development processes. Start the API in one terminal and Vite in another. Start the API before `npm test` because the current Playwright configuration only launches Vite. The inventory E2E fixture creates a unique database-backed SKU for each test and deletes it during teardown, including when a test fails.
+
+The API integration suite covers the last-unit concurrent purchase, persisted stock receipts, and rejected adjustments that must leave stock and history unchanged.
 
 GitHub Actions runs the database migrations against a fresh CI SQLite file, runs the Python unit tests and frontend build, then starts FastAPI while Playwright runs. The workflow installs the browsers configured in `playwright.config.ts` and uploads the Playwright report and failure diagnostics.
 
