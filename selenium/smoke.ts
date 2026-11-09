@@ -102,7 +102,11 @@ async function runSmokeFlow(): Promise<void> {
   }
 
   if (process.env.CI) {
-    chromeOptions.addArguments('--headless=new', '--disable-dev-shm-usage');
+    chromeOptions.addArguments(
+      '--headless=new',
+      '--disable-dev-shm-usage',
+      '--no-sandbox',
+    );
   }
 
   driver = await new Builder()
