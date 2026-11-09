@@ -88,12 +88,12 @@ The existing Playwright starter spec is `tests/shop.spec.ts`, and the Selenium c
 tests/
 ├── unit/          # Fast tests for pure TypeScript behavior
 ├── integration/   # React + DOM behavior (for example, Vitest and Testing Library)
-├── e2e/           # Browser journeys (Playwright; migrate the starter spec as an exercise)
+├── e2e/           # Browser journeys (Playwright inventory workflows)
 ├── selenium/      # Focused Selenium comparison exercises
-└── fixtures/      # Small shared test data/setup, only when useful
+└── fixtures/      # Playwright page helpers and per-test inventory setup/cleanup
 ```
 
-Use `.agent/skills/testing-typescript-playwright-selenium-ci/SKILL.md` as the testing guide. It explains test-layer choices, accessible locators, isolation, async waits, Selenium cleanup, and CI diagnosis. The current package scripts and workflow are starter material; adding unit/integration tooling, reorganizing the Playwright spec, and evolving CI are intentionally learner-owned exercises.
+Use `.agent/skills/testing-typescript-playwright-selenium-ci/SKILL.md` as the testing guide. It explains test-layer choices, accessible locators, isolation, async waits, Selenium cleanup, and CI diagnosis. The Playwright fixture creates a unique inventory SKU through the API for each test and deletes it in teardown, so stock changes do not leak between tests. The current package scripts and workflow are starter material; adding unit/integration tooling and evolving CI are intentionally learner-owned exercises.
 
 ## Five-day plan (expanded reference)
 
@@ -101,7 +101,7 @@ Use `.agent/skills/testing-typescript-playwright-selenium-ci/SKILL.md` as the te
 Explore product search, category filtering, cart, and checkout. Write a short risk list: money totals, lost cart items, invalid input, and empty results. Learn the test pyramid, functional vs. nonfunctional tests, test case vs. test, and bug report structure. Add one manual test case with preconditions, steps, and expected result.
 
 ### Day 2 — Playwright essentials
-Read `tests/shop.spec.ts`. Run it and explain each locator and assertion. Practice `getByRole`, `getByLabel`, and `getByPlaceholder`; prefer user-facing semantics over CSS selectors. Add a product category test. Playwright waits for actionability and assertions retry; avoid fixed sleeps such as `waitForTimeout`.
+Read `tests/e2e/inventory.spec.ts` and `tests/fixtures/inventory.fixture.ts`. Trace how the fixture creates a test SKU, passes it through `use()`, and deletes it in `finally`. Practice `getByRole`, `getByLabel`, and `getByPlaceholder`; prefer user-facing semantics over CSS selectors. Playwright waits for actionability and assertions retry; avoid fixed sleeps such as `waitForTimeout`.
 
 ### Day 3 — Coverage and reliability
 Add a negative checkout test, quantity decrement test, and boundary tests (zero items, unknown search). Keep each test independent and assert outcomes, not implementation details. Use `npm run test:headed`, `npm run test:debug`, and trace artifacts to diagnose a deliberate broken locator. Consider keyboard access and semantic HTML; an accessibility scan is a useful follow-up exercise.
@@ -114,7 +114,7 @@ Inspect `.github/workflows/ci.yml`; create a branch and push it to see the GitHu
 
 ## Test design notes
 
-The suite covers search, filtering, add/remove, totals, checkout success, and cancellation. Add cases for malformed input, empty cart, quantity boundaries, keyboard navigation, and responsive behavior. A good test states one behavior, uses deterministic setup, waits on meaningful UI state, and has an assertion that would fail for the reported bug. Keep test data local and avoid ordering dependencies.
+The inventory E2E suite covers stock status boundaries, form validation, and stock-status filtering. Add cases for pagination, empty search results, API failures, keyboard navigation, and responsive behavior. A good test states one behavior, uses deterministic setup, waits on meaningful UI state, and has an assertion that would fail for the reported bug. Keep test data local and avoid ordering dependencies.
 
 ## AI-agent practice prompts
 

@@ -48,6 +48,8 @@ The first learner exercise is in `server/tests/unit/README.md`. Unit tests shoul
 
 Purchase uses a SQLite write transaction and a conditional `UPDATE ... WHERE quantity >= requested_quantity`. This protects the last unit from being sold twice. For the user's concurrency exercise, create a one-unit SKU, send two purchase requests at once, then check that only one request succeeds and the stored quantity is zero.
 
-The React app and API are separate development processes. Start the API in one terminal and Vite in another. The browser tests are learner-owned; start the API before `npm test` because the current Playwright configuration only launches Vite. The existing UI tests use fixed in-memory Northstar SKUs and counts, so update their fixtures to create isolated database-backed products before relying on them with the 100-row API catalog.
+The React app and API are separate development processes. Start the API in one terminal and Vite in another. Start the API before `npm test` because the current Playwright configuration only launches Vite. The inventory E2E fixture creates a unique database-backed SKU for each test and deletes it during teardown, including when a test fails.
+
+GitHub Actions runs the database migrations against a fresh CI SQLite file, runs the Python unit tests and frontend build, then starts FastAPI while Playwright runs. The workflow installs the browsers configured in `playwright.config.ts` and uploads the Playwright report and failure diagnostics.
 
 The demo has no authentication or authorization. Do not expose the create/delete endpoints or this database to an untrusted network.

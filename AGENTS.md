@@ -17,6 +17,7 @@ Run commands from the repository root:
 - `npm run lint` runs the configured TypeScript check; it is not a stylistic linter.
 - `npm test` runs Playwright; its config launches Vite on port 4173. Start FastAPI on port 8000 separately before browser tests against the connected dashboard.
 - `npm run test:ui`, `npm run test:headed`, and `npm run test:debug` support interactive exploration and debugging.
+- `.github/workflows/ci.yml` prepares the Flyway SQLite database, runs Python unit tests and the frontend build, installs all configured Playwright browsers, starts FastAPI, and runs the API-backed browser suite. Playwright uses one worker in CI to keep database writes predictable.
 - `npm run test:selenium` runs the optional Selenium smoke script; start the app separately and have Chrome available.
 - `npm run db:migrate` calls the Node wrapper in `scripts/flyway.mjs` to apply Flyway migrations to `data/inventory.db` (requires Flyway CLI on `PATH`).
 - `npm run db:info` calls the same wrapper to show Flyway migration status (requires Flyway CLI on `PATH`).

@@ -30,15 +30,14 @@ async function addStockBy(
     await receiveStock.saveMovement();
 }
 
-test('check for out of stock status at zero quantity', async ({ inventoryPage, stockOperations }) => {
-    // using 'insulated bottle' sku
-    const sku = 'NS-ACC-018';
+test('check for out of stock status at zero quantity', async ({ inventoryItem, inventoryPage, stockOperations }) => {
+    const { sku } = inventoryItem;
 
     // make the stock '0'
     const adjustment = await stockOperations.adjust();
     await adjustStockBy(adjustment, {
         sku,
-        quantityToRemove: 6,
+        quantityToRemove: 24,
         reason: 'Write-off'
     });
 
@@ -48,15 +47,14 @@ test('check for out of stock status at zero quantity', async ({ inventoryPage, s
     await expect(row).toContainText('Out of stock');
 })
 
-test('check for low stock status at reorder point', async ({ inventoryPage, stockOperations }) => {
-    // using 'insulated bottle' sku
-    const sku = 'NS-ACC-018';
+test('check for low stock status at reorder point', async ({ inventoryItem, inventoryPage, stockOperations }) => {
+    const { sku } = inventoryItem;
 
     // make the stock '0'
     const adjustment = await stockOperations.adjust();
     await adjustStockBy(adjustment, {
         sku,
-        quantityToRemove: 6,
+        quantityToRemove: 24,
         reason: 'Write-off'
     });
 
@@ -74,15 +72,14 @@ test('check for low stock status at reorder point', async ({ inventoryPage, stoc
     await expect(row).toContainText('Low stock');
 })
 
-test('check for in stock status at one plus reorder point', async ({ inventoryPage, stockOperations }) => {
-    // using 'insulated bottle' sku
-    const sku = 'NS-ACC-018';
+test('check for in stock status at one plus reorder point', async ({ inventoryItem, inventoryPage, stockOperations }) => {
+    const { sku } = inventoryItem;
 
     // make the stock '0'
     const adjustment = await stockOperations.adjust();
     await adjustStockBy(adjustment, {
         sku,
-        quantityToRemove: 6,
+        quantityToRemove: 24,
         reason: 'Write-off'
     });
 
@@ -100,10 +97,8 @@ test('check for in stock status at one plus reorder point', async ({ inventoryPa
     await expect(row).toContainText('In stock');
 })
 
-test('check for adding negative value', async ({ inventoryPage, stockOperations }) => {
-    // using 'insulated bottle' sku
-    const sku = 'NS-ACC-018';
-
+test('check for adding negative value', async ({ inventoryItem, inventoryPage, stockOperations }) => {
+    const { sku } = inventoryItem;
     // add the negative value
     const receipt = await stockOperations.receive();
     await addStockBy(receipt, {
@@ -116,10 +111,8 @@ test('check for adding negative value', async ({ inventoryPage, stockOperations 
     await expect(inventoryPage.page.getByLabel('Quantity received')).toHaveJSProperty('validity.valid', false);
 })
 
-test('check for removing negative value', async ({ inventoryPage, stockOperations }) => {
-    // using 'insulated bottle' sku
-    const sku = 'NS-ACC-018';
-
+test('check for removing negative value', async ({ inventoryItem, inventoryPage, stockOperations }) => {
+    const { sku } = inventoryItem;
     // make the stock '0'
     const adjustment = await stockOperations.adjust();
     await adjustStockBy(adjustment, {
@@ -133,10 +126,8 @@ test('check for removing negative value', async ({ inventoryPage, stockOperation
 })
 
 
-test('check for adding invalid value', async ({ inventoryPage, stockOperations }) => {
-    // using 'insulated bottle' sku
-    const sku = 'NS-ACC-018';
-
+test('check for adding invalid value', async ({ inventoryItem, inventoryPage, stockOperations }) => {
+    const { sku } = inventoryItem;
     // add the negative value
     const receipt = await stockOperations.receive();
     await addStockBy(receipt, {
@@ -149,10 +140,8 @@ test('check for adding invalid value', async ({ inventoryPage, stockOperations }
     await expect(inventoryPage.page.getByLabel('Quantity received')).toHaveJSProperty('validity.valid', false);
 })
 
-test('check for removing invalid value', async ({ inventoryPage, stockOperations }) => {
-    // using 'insulated bottle' sku
-    const sku = 'NS-ACC-018';
-
+test('check for removing invalid value', async ({ inventoryItem, inventoryPage, stockOperations }) => {
+    const { sku } = inventoryItem;
     // make the stock '0'
     const adjustment = await stockOperations.adjust();
     await adjustStockBy(adjustment, {
@@ -165,7 +154,15 @@ test('check for removing invalid value', async ({ inventoryPage, stockOperations
     await expect(inventoryPage.page.getByLabel('Quantity to remove')).toHaveJSProperty('validity.valid', false);
 })
 
-test('shows only low-stock items when the Low stock filter is selected', async ({ inventoryPage }) => {
+test('shows only low-stock items when the Low stock filter is selected', async ({ inventoryItem, inventoryPage, stockOperations }) => {
+    const { sku, startingQuantity, reorderPoint } = inventoryItem;
+    const adjustment = await stockOperations.adjust();
+    await adjustStockBy(adjustment, {
+        sku,
+        quantityToRemove: startingQuantity - reorderPoint,
+        reason: 'Cycle count correction'
+    });
+
     // select the low stock status
     const status = 'Low stock';
     await inventoryPage.getSkuByStatus(status);
@@ -173,12 +170,7 @@ test('shows only low-stock items when the Low stock filter is selected', async (
     const inventoryTable = inventoryPage.page.locator('.inventory-table');
     const rows = inventoryTable.locator('tbody').getByRole('row');
 
-    // console the count
-    const count = await rows.count();
-    console.log(`total number of rows in ${status} is ${count}`);
-    expect(count).toEqual(2);
-
-    for(let i=0; i<count; i++) {
-        expect(await rows.nth(i).innerText()).toContain(status);
-    }
+    await expect(rows).toHaveCount(1);
+    await expect(rows.first()).toContainText(sku);
+    await expect(rows.first()).toContainText(status);
 });

@@ -1257,3 +1257,47 @@ main {
 .table-footer button:not(:disabled) {
   cursor: pointer;
 }
+
+.dialog-backdrop {
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.movement-dialog {
+  width: min(100%, 430px);
+  min-width: 0;
+  max-height: calc(100vh - 40px);
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
+}
+
+.movement-dialog label {
+  min-width: 0;
+}
+
+.movement-dialog input,
+.movement-dialog select {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.dialog-actions {
+  flex-wrap: wrap;
+}
+
+@media (max-width: 560px) {
+  .dialog-backdrop {
+    padding: 12px;
+  }
+
+  .movement-dialog {
+    max-height: calc(100vh - 24px);
+    max-height: calc(100dvh - 24px);
+    padding: 24px 18px;
+  }
+
+  .dialog-actions button {
+    flex: 1 1 120px;
+  }
+}
