@@ -2,7 +2,7 @@
 
 ## Project Structure & Module Organization
 
-This repository contains the Northstar QA Automation Interview Lab. Keep the React UI in `src/`, the Python API in `server/`, browser and API tests in `tests/`, the optional Selenium example in `selenium/`, database migrations in `database/migrations/`, and static assets in `public/` or `assets/` as appropriate. Keep generated output, the local SQLite database under `data/`, Python virtual environments, and local dependencies out of source control.
+This repository contains the Northstar Inventory Management quality engineering project. Keep the React UI in `src/`, the Python API in `server/`, browser and API tests in `tests/`, the optional Selenium example in `selenium/`, database migrations in `database/migrations/`, and static assets in `public/` or `assets/` as appropriate. Keep generated output, the local SQLite database under `data/`, Python virtual environments, and local dependencies out of source control.
 
 Before substantial work, read `README.md` for the learner-facing project plan, `.agent/MEMORY.md` for implementation state and continuity notes, and `.agent/skills/code-readability-maintainability/SKILL.md` for project coding guidance. Treat source code as authoritative if it conflicts with notes, then update the notes to match. `.agent/` is the canonical home for project agent skills and memory; check it for relevant guidance throughout the task.
 
@@ -17,7 +17,7 @@ Run commands from the repository root:
 - `npm run lint` runs the configured TypeScript check; it is not a stylistic linter.
 - `npm test` runs Playwright; its config launches Vite on port 4173. Start FastAPI on port 8000 separately before browser tests against the connected dashboard.
 - `npm run test:ui`, `npm run test:headed`, and `npm run test:debug` support interactive exploration and debugging.
-- `.github/workflows/ci.yml` prepares the Flyway SQLite database, runs Python unit tests and the frontend build, installs all configured Playwright browsers, starts FastAPI, and runs the API-backed browser suite. Playwright uses one worker in CI to keep database writes predictable.
+- `.github/workflows/ci.yml` skips runs when only the root `README.md` changes. Otherwise, it prepares the Flyway SQLite database, runs Python unit tests and the frontend build, installs all configured Playwright browsers, starts FastAPI, and runs the API-backed browser suite. Playwright uses one worker in CI to keep database writes predictable.
 - `npm run test:selenium` runs the optional Selenium smoke script; start the app separately and have Chrome available.
 - `npm run db:migrate` calls the Node wrapper in `scripts/flyway.mjs` to apply Flyway migrations to `data/inventory.db` (requires Flyway CLI on `PATH`).
 - `npm run db:info` calls the same wrapper to show Flyway migration status (requires Flyway CLI on `PATH`).
