@@ -10,31 +10,34 @@ Apply this skill when changing application behavior, tests, or CI. Choose the na
 ## Current project setup
 
 - React 18, TypeScript, and Vite app code live in `src/`.
-- Playwright Test is installed and configured in `playwright.config.ts`; current browser tests are in `tests/shop.spec.ts` and run against Vite on port 4173.
-- Selenium WebDriver is installed; `selenium/smoke.ts` is a small Chrome search comparison and requires the app to be started separately.
+- Playwright Test is installed and configured in `playwright.config.ts`; current inventory browser tests are in `tests/e2e/inventory.spec.ts` and run against Vite on port 4173.
+- Selenium WebDriver is installed; `selenium/smoke.ts` creates a test SKU through the API, receives stock through the UI, verifies saved inventory and movement history, then cleans up. It requires FastAPI, Vite, and Chrome.
+- Python unit tests live in `server/tests/unit/`. API integration tests in `server/tests/integration/` start Uvicorn against a temporary copy of the migrated database and exercise HTTP responses and persisted SQLite state.
 - `npm run build` performs TypeScript build and Vite build. `npm run lint` is currently a TypeScript check, not ESLint.
-- GitHub Actions currently runs clean install, Chromium install, build, Playwright, and report upload. It does not currently run Vitest or a separate test TypeScript check.
+- GitHub Actions migrates a fresh SQLite database, runs Python unit and API integration tests, builds the frontend, installs all Playwright project browsers and Chrome, starts FastAPI and Vite, runs Playwright with one worker and the Selenium smoke in headless Chrome, and uploads Playwright reports and failure diagnostics. Root README-only changes are filtered out.
 - No Vitest or Testing Library dependencies are currently present. Do not write imports from them as if they work until a separate task installs and configures them.
 
 ## Recommended test layers and folders
 
 Keep the pyramid weighted toward fast, focused tests:
 
-1. **Unit tests:** many small tests for deterministic logic without rendering or a browser. Place in `tests/unit/` (or beside a module under `src/**/__tests__/` when colocated tests are preferred). Extract pure calculations such as cart totals or filtering only when that improves reuse or makes meaningful behavior easier to verify.
-2. **Component/in-process integration tests:** test React components and DOM interactions together, without launching a real browser. Place in `tests/integration/*.test.tsx`. Recommended future stack: Vitest, Testing Library (`@testing-library/react`, `@testing-library/user-event`), and jsdom.
-3. **Browser E2E tests:** test a small number of important user journeys in a real browser using Playwright. Place in `tests/e2e/*.spec.ts`; move any existing browser specs here only when the learner is ready to practice that migration and update Playwright `testDir` as part of the same exercise.
-4. **Selenium comparison:** retain `tests/selenium/` for focused WebDriver exercises. Do not create a full Selenium duplicate suite unless cross-tool comparison becomes an explicit goal.
+1. **Unit tests:** many small tests for pure behavior without rendering or a browser. Python schema and mocked-route examples live in `server/tests/unit/`. Add TypeScript unit tests under `tests/unit/` only after selecting and configuring a runner.
+2. **API integration tests:** exercise FastAPI over HTTP with a real temporary SQLite database. Keep them in `server/tests/integration/`; create test-owned records, assert response and database effects, and clean up in fixture teardown.
+3. **Component integration tests:** test React components and DOM interactions without a real browser. Place future component tests in `tests/integration/*.test.tsx`. Recommended stack: Vitest, Testing Library (`@testing-library/react`, `@testing-library/user-event`), and jsdom; those dependencies are not installed.
+4. **Browser E2E tests:** test a small number of important inventory workflows in a real browser using Playwright. Current specs live in `tests/e2e/*.spec.ts`.
+5. **Selenium comparison:** keep the focused WebDriver flow in `selenium/smoke.ts`. Avoid duplicating the full Playwright suite unless cross-tool comparison becomes an explicit goal.
 
-Suggested structure: `tests/unit/`, `tests/integration/`, `tests/e2e/`, `tests/selenium/`, and `tests/fixtures/`. Keep fixtures minimal and add shared data/setup only when multiple tests genuinely need it. Avoid generic fixture frameworks or abstractions for one-off tests. Keep tool-specific configuration separate: `vitest.config.ts` for Vitest and `playwright.config.ts` for Playwright.
+Current structure: `server/tests/unit/`, `server/tests/integration/`, `tests/e2e/`, `tests/fixtures/`, and `selenium/`. Add `tests/unit/` or component `tests/integration/` if a TypeScript test runner is deliberately introduced. Keep fixtures minimal and add shared setup only when multiple tests benefit from it. Keep runner configuration separate: Vitest config for React component tests and `playwright.config.ts` for browser tests.
 
 For a learn-by-doing repository, scaffolding folders and documenting the structure is appropriate; leave test files, test scripts, framework installation, and CI workflow implementation as learner exercises unless the user explicitly requests those tasks.
 
 ## What to test at each layer
 
-- **Unit:** pure search/filter matching, subtotal calculation, quantity boundaries, and other deterministic business rules if extracted from UI code.
-- **Component integration:** search and category controls update results; empty-state reset works; cart quantity controls and totals update; checkout form validation and cancellation preserve the right state; lesson tabs and progress work accessibly.
-- **E2E:** a small set of high-value flows such as discover product → add to bag → edit quantity → checkout → confirmation, plus a focused empty-search recovery path.
-- **Selenium:** one comparison smoke that searches for a product, waits for the result, and always quits the driver.
+- **Unit:** schema/request validation and pure deterministic stock rules.
+- **API integration:** inventory creation and lookup, stock movement persistence, rejected operations leaving data unchanged, and concurrent purchase of the last unit.
+- **Component integration:** when a React test stack is added, search/filter behavior, loading and error states, and movement dialog validation.
+- **E2E:** high-value inventory workflows such as stock-status boundaries, receipt actions, movement history, search, and pagination.
+- **Selenium:** one smoke journey that creates a SKU, receives stock through the UI, verifies saved quantity and history, cleans up data, and quits the driver.
 
 These are coverage examples, not a requirement to test every behavior at all layers. Cover customer risk and observable behavior, not implementation trivia.
 
@@ -45,7 +48,7 @@ These are coverage examples, not a requirement to test every behavior at all lay
 - Avoid fixed sleeps. Use Playwright retrying assertions and actionability waits; in Selenium use explicit waits for the condition required by the next action. In component tests, await user interactions and observable DOM changes.
 - Keep tests deterministic: use local test data, control state per test, avoid dependence on test order, wall-clock timing, remote services, or shared mutable fixtures.
 - Assert outcomes rather than CSS classes, React state shape, implementation function names, or arbitrary DOM structure.
-- Use browser-native form validation deliberately and test what users can observe, including validity/focus behavior. Preserve cart and form data on recoverable errors.
+- Use browser-native form validation deliberately and test what users can observe, including validity/focus behavior. Preserve inventory state and form input on recoverable errors.
 - In Selenium, wrap browser use in `try/finally` so `driver.quit()` runs after success or failure.
 - Keep tests focused. A test may cover a coherent user journey, but split unrelated behavior so failures identify a clear cause.
 
@@ -56,7 +59,7 @@ If adding the recommended unit/integration layer in a later implementation task:
 - Add Vitest, `@testing-library/react`, `@testing-library/user-event`, and jsdom as development dependencies and define explicit `test:unit` and `test:integration` scripts (or a single documented Vitest script with clear projects).
 - Configure Vitest to use the Vite configuration where appropriate and jsdom for DOM tests. Keep Playwright’s browser suite under Playwright Test; do not try to run Playwright specs through Vitest.
 - Extend type checking to include test files. Keep browser app types, Node/config types, and test-runner types explicit so globals from one environment do not leak ambiguously into another. The current `tsconfig.json` includes only `src`; make any broader scope deliberate and verify it.
-- If the learner elects to migrate the existing Playwright spec, move it to `tests/e2e/shop.spec.ts` and update Playwright `testDir` as one exercise. Do not preempt the learner by doing this migration.
+- Playwright specs already live in `tests/e2e/`; keep new browser flows there unless the project structure changes deliberately.
 - Avoid extracting app logic solely to satisfy a test. Extract a small pure module when the domain rule benefits from an independent, clear contract.
 
 ## CI workflow
@@ -65,9 +68,9 @@ Run CI on pushes and pull requests. A practical progression for this project is:
 
 1. `npm ci` from the committed lockfile.
 2. Typecheck/build and run fast unit plus component integration tests.
-3. Install only the Playwright browser engines in use (currently Chromium) and run E2E.
+3. Install the configured Playwright browser engines and run E2E against FastAPI and the migrated CI database.
 4. Upload the Playwright report and relevant failure artifacts even when tests fail, with sensible retention.
-5. Keep Selenium optional until Chrome provisioning and runtime are deliberately standardized in CI; document the local command and prerequisites meanwhile.
+5. Provision Chrome and ChromeDriver, then run the focused Selenium smoke in headless Chrome. Document its local prerequisites and command.
 
 Keep CI reproducible and diagnose failures from logs, traces, screenshots, and reports. Use CI retries as a diagnostic aid, not as a way to hide flaky behavior. Start with conservative worker counts for constrained CI machines; increase parallelism only when tests are isolated and resources support it. Never place secrets in test fixtures or logs.
 

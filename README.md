@@ -8,7 +8,7 @@ Northstar is a demo inventory operations app backed by a Python API and SQLite d
 - FastAPI service for inventory lookup, receipts, adjustments, purchases, and movement history.
 - SQLite database managed by versioned Flyway migrations.
 - Playwright end-to-end coverage, Python unit tests, and an optional Selenium example.
-- GitHub Actions workflow that migrates a fresh database, runs Python unit tests and the frontend build, starts the API, and runs the browser suite.
+- GitHub Actions workflow that migrates a fresh database, runs Python unit and integration tests, builds the frontend, and runs Playwright and Selenium browser checks.
 - An in-app learning guide with practical exercises for inventory quality, Playwright, Selenium, and CI.
 
 ## Requirements
@@ -79,6 +79,14 @@ cd server
 python -m pytest tests/unit
 ```
 
+The API integration tests start FastAPI against a temporary copy of the migrated SQLite database and send real HTTP requests with Python's standard library. Migrate the local database first, then run them from `server/`:
+
+```bash
+python -m pytest tests/integration
+```
+
+The integration cases cover simultaneous purchases of the final unit, a successful receipt with its saved movement, and a rejected adjustment that leaves inventory and movement history unchanged.
+
 Run the Playwright suite with the API running on port 8000. Playwright starts Vite on port 4173:
 
 ```bash
@@ -87,15 +95,31 @@ npm test
 
 Use `npm run test:ui`, `npm run test:headed`, or `npm run test:debug` to explore and diagnose browser checks. The E2E fixture creates a unique inventory SKU for each test, searches for it in the UI, and deletes it during teardown so stock changes do not leak between tests.
 
-The optional Selenium starter is in `selenium/smoke.ts`. It still targets the earlier storefront UI and needs to be updated to inventory selectors before it can verify this dashboard. Start the application separately and have Chrome available when you adapt and run it:
+The Selenium smoke flow is in `selenium/smoke.ts`. It creates a test SKU through the API, receives stock through the dashboard, checks the saved inventory and movement history, then cleans up the SKU. First migrate the database if needed with `npm run db:migrate`, then start the services in separate terminals from the repository root.
+
+Terminal 1, with `server/.venv` activated:
+
+```bash
+uvicorn app.main:app --app-dir server --reload --host 127.0.0.1 --port 8000
+```
+
+Terminal 2:
+
+```bash
+npm run dev
+```
+
+Terminal 3 (Chrome must be installed):
 
 ```bash
 npm run test:selenium
 ```
 
+The script runs in your regular Chrome window locally. It uses a unique SKU and removes it when the run finishes.
+
 ## GitHub Actions
 
-Pushes and pull requests that change files other than the root `README.md` run `.github/workflows/ci.yml`. CI prepares a fresh SQLite database with Flyway, runs Python unit tests, builds the frontend, starts FastAPI, and runs Playwright using the browsers configured in `playwright.config.ts`. CI runs browser tests with one worker to limit contention on SQLite. The Playwright report and failure diagnostics are uploaded as workflow artifacts.
+Pushes and pull requests that change files other than the root `README.md` run `.github/workflows/ci.yml`. CI prepares a fresh SQLite database with Flyway, runs Python unit and API integration tests, builds the frontend, runs Playwright using the browsers configured in `playwright.config.ts`, and runs the Selenium smoke in headless Chrome. CI runs Playwright with one worker to limit contention on SQLite. The Playwright report and failure diagnostics are uploaded as workflow artifacts.
 
 ## Project layout
 
@@ -103,6 +127,7 @@ Pushes and pull requests that change files other than the root `README.md` run `
 src/                         React dashboard and API client
 server/app/                  FastAPI routes, schemas, and SQLite access
 server/tests/unit/           Python unit tests
+server/tests/integration/    HTTP and SQLite integration tests
 database/migrations/         Flyway schema and seed migrations
 tests/e2e/                   Playwright inventory workflows
 tests/fixtures/              Per-test inventory setup and cleanup

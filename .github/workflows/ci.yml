@@ -56,9 +56,9 @@ jobs:
           mkdir -p data
           npm run db:migrate
 
-      - name: Run Python unit tests
+      - name: Run Python unit and integration tests
         working-directory: server
-        run: python -m pytest tests/unit
+        run: python -m pytest tests/unit tests/integration
 
       - name: Build the frontend
         run: npm run build
@@ -66,26 +66,41 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
 
-      - name: Run Playwright against the API-backed app
+      - name: Set up Chrome for Selenium
+        id: setup-chrome
+        uses: browser-actions/setup-chrome@v2
+        with:
+          install-chromedriver: true
+
+      - name: Run Playwright and Selenium against the API-backed app
+        env:
+          CHROME_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
         run: |
           python -m uvicorn app.main:app --app-dir server --host 127.0.0.1 --port 8000 \
             > "$RUNNER_TEMP/northstar-api.log" 2>&1 &
           api_pid=$!
-          trap 'kill "$api_pid" 2>/dev/null || true' EXIT
+          npm run dev -- --host 127.0.0.1 --port 5173 \
+            > "$RUNNER_TEMP/northstar-vite.log" 2>&1 &
+          vite_pid=$!
+          trap 'kill "$api_pid" "$vite_pid" 2>/dev/null || true' EXIT
 
           for attempt in $(seq 1 30); do
-            if curl --fail --silent http://127.0.0.1:8000/health >/dev/null; then
+            if curl --fail --silent http://127.0.0.1:8000/health >/dev/null \
+              && curl --fail --silent http://127.0.0.1:5173/ >/dev/null; then
               break
             fi
             sleep 1
           done
 
-          if ! curl --fail --silent http://127.0.0.1:8000/health >/dev/null; then
+          if ! curl --fail --silent http://127.0.0.1:8000/health >/dev/null \
+            || ! curl --fail --silent http://127.0.0.1:5173/ >/dev/null; then
             cat "$RUNNER_TEMP/northstar-api.log"
+            cat "$RUNNER_TEMP/northstar-vite.log"
             exit 1
           fi
 
           npm test
+          npm run test:selenium
 
       - name: Upload Playwright reports and diagnostics
         if: ${{ !cancelled() }}

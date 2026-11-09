@@ -17,14 +17,14 @@ Run commands from the repository root:
 - `npm run lint` runs the configured TypeScript check; it is not a stylistic linter.
 - `npm test` runs Playwright; its config launches Vite on port 4173. Start FastAPI on port 8000 separately before browser tests against the connected dashboard.
 - `npm run test:ui`, `npm run test:headed`, and `npm run test:debug` support interactive exploration and debugging.
-- `.github/workflows/ci.yml` skips runs when only the root `README.md` changes. Otherwise, it prepares the Flyway SQLite database, runs Python unit tests and the frontend build, installs all configured Playwright browsers, starts FastAPI, and runs the API-backed browser suite. Playwright uses one worker in CI to keep database writes predictable.
-- `npm run test:selenium` runs the optional Selenium smoke script; start the app separately and have Chrome available.
+- `.github/workflows/ci.yml` skips runs when only the root `README.md` changes. Otherwise, it prepares the Flyway SQLite database, runs Python unit and integration tests plus the frontend build, installs configured Playwright browsers and Chrome, starts FastAPI and Vite, then runs Playwright and the Selenium smoke. Playwright uses one worker in CI to keep database writes predictable.
+- `npm run test:selenium` runs the Selenium smoke script; start FastAPI and Vite separately and have Chrome available. See the README for the three-terminal sequence.
 - `npm run db:migrate` calls the Node wrapper in `scripts/flyway.mjs` to apply Flyway migrations to `data/inventory.db` (requires Flyway CLI on `PATH`).
 - `npm run db:info` calls the same wrapper to show Flyway migration status (requires Flyway CLI on `PATH`).
 - The Python inventory API lives in `server/app/`; install `server/requirements.txt` in a virtual environment and follow `server/README.md` to start it.
 - The inventory list API caps each response at 15 items and supports `offset`, `search`, and stock `status` filters. The UI fetches a page only when the user navigates to it.
 - Start the backend with `uvicorn app.main:app --app-dir server --reload --host 127.0.0.1 --port 8000` after activating `server/.venv`.
-- Python unit tests use pytest under `server/tests/unit/`; install `server/requirements-dev.txt` and run `python -m pytest tests/unit` from `server/`.
+- Python unit and API integration tests use pytest under `server/tests/`; install `server/requirements-dev.txt`, apply Flyway migrations before the integration tests, and run `python -m pytest tests/unit tests/integration` from `server/`.
 
 Do not claim checks passed unless they were actually run. Follow the user’s request about whether to run tests or verification.
 
