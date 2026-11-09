@@ -95,7 +95,10 @@ async function waitForSmokeItemRowText(webDriver: WebDriver): Promise<string> {
 
 async function runSmokeFlow(): Promise<void> {
   await createSmokeItem();
-  const chromeOptions = new Options();
+  const chromeOptions = new Options().windowSize({
+    width: 1280,
+    height: 900,
+  });
 
   if (process.env.CHROME_PATH) {
     chromeOptions.setChromeBinaryPath(process.env.CHROME_PATH);
@@ -158,9 +161,16 @@ async function runSmokeFlow(): Promise<void> {
   );
   await reasonSelect.selectByVisibleText('Customer return');
 
-  await dialog.findElement(
+  const saveMovementButton = await dialog.findElement(
     By.xpath(".//button[normalize-space(.)='Save movement']"),
-  ).click();
+  );
+  await driver.wait(until.elementIsVisible(saveMovementButton), 10_000);
+  await driver.wait(until.elementIsEnabled(saveMovementButton), 10_000);
+  await driver.executeScript(
+    'arguments[0].scrollIntoView({ block: "center", inline: "center" });',
+    saveMovementButton,
+  );
+  await saveMovementButton.click();
 
   await driver.wait(async () => {
     const rowText = await readSmokeItemRowText(driver!);

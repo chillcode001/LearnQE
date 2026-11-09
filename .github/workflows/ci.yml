@@ -72,13 +72,6 @@ jobs:
         with:
           install-chromedriver: true
 
-      - name: Report Chrome and ChromeDriver versions
-        env:
-          CHROME_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
-        run: |
-          "$CHROME_PATH" --version
-          chromedriver --version
-
       - name: Run Playwright and Selenium against the API-backed app
         env:
           CHROME_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
